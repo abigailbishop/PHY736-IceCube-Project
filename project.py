@@ -8,11 +8,14 @@ from scipy.optimize import curve_fit
 from scipy.spatial import ConvexHull
 from cycler import cycler
 import argparse
+import warnings
+warnings.filterwarnings('error')
 
 #argparse
 argparser = argparse.ArgumentParser()
 argparser.add_argument('-l', '--location', dest = 'location', type=int, nargs=3, default=[0,0,0])
 argparser.add_argument('-d', '--direction', dest = 'direction', type=int, nargs=3, default=[1,0,0])
+argparser.add_argument('-r', '--num_rand_events', dest = 'num_rand_events', type=int, default=0)
 argparser.add_argument('-e', '--energy', dest = 'energy', type = float)
 argparser.add_argument('-g', '--detector_geometry', dest = 'detector_geometry', type = str)
 argparser.add_argument('-o', '--output_file', dest = 'output_file', type = str)
@@ -88,6 +91,9 @@ class Particle:
         self.energy = new_energy
         self.beta = np.sqrt(1-(self.mass/self.energy)**2)
         self.momentum = np.sqrt(self.energy**2-self.mass**2)/c 
+        
+    def save_particle(self, file_name):
+        np.save(file_name, vars(self))
 
 #define detector
 class DOM:
@@ -193,14 +199,21 @@ def em_shower_step(particle):
         if interaction <= pair_prod: #assuming it hits a positron/electron at rest
             #print('pp')
             photon_energy = (particle.energy+particle.mass)/2
-            direction1_step = [np.arccos(np.sqrt((
-                particle.energy**2-particle.mass**2)/2*(photon_energy/c)**2)), phi_i]
-            direction2_step = [-np.arccos(np.sqrt((
-                particle.energy**2-particle.mass**2)/2*(photon_energy/c)**2)), np.pi-phi_i]
-            direction1 = add_direction(particle.theta, particle.phi, 
-                                       direction1_step[0], direction1_step[1])
-            direction2 = add_direction(particle.theta, particle.phi, 
-                                       direction2_step[0], direction2_step[1])
+            try: 
+                # 2D Interaction Calculations
+                direction1_step = [np.arccos(np.sqrt((
+                    particle.energy**2-particle.mass**2)/2*(photon_energy/c)**2)), phi_i]
+                direction2_step = [-np.arccos(np.sqrt((
+                    particle.energy**2-particle.mass**2)/2*(photon_energy/c)**2)), np.pi-phi_i]
+                direction1 = add_direction(particle.theta, particle.phi, 
+                                           direction1_step[0], direction1_step[1])
+                direction2 = add_direction(particle.theta, particle.phi, 
+                                           direction2_step[0], direction2_step[1])
+            except Warning as warn: 
+                print(warn)
+                print("Converting to 1D pair-production interaction")
+                direction1 = particle.direction
+                direction2 = particle.direction
             photon1 = Particle('photon', 0, 0, direction1, particle.location, 
                                photon_energy, particle.time+dtime) 
             photon2 = Particle('photon', 0, 0 , direction2, particle.location, 
@@ -549,16 +562,43 @@ def em_shower(neutrino, steps, n_cher_steps, detector, plot_shower=False, debug=
         
     return detector
 
+scale = 1
 if args.detector_geometry == 'IceCube_small':
     X, Y, Z = np.mgrid[-20:20:2j, -20:20:2j,-20:20:2j]
+    scale = 100
 elif args.detector_geometry == 'IceCube':
     X, Y, Z = np.mgrid[-500:500:21j, -500:500:21j,-500:500:21j]
+    scale = 1000
 locations = np.vstack((X.flatten(), Y.flatten(), Z.flatten())).T
 dom_list = [DOM(loc) for loc in locations]
 IceCube = detector(dom_list)
 
-
 #Actual Event
-neutrino = Particle('electron neutrino', 0, 0, args.direction, args.location, args.energy, 0)
-IceCube = em_shower(neutrino, 6, 20, IceCube, debug=args.debug)
-IceCube.save_detector(args.output_file)
+def rand_direction():
+    theta = np.arccos((random.random() - 0.5) * 2)
+    phi   = random.random() * 2 * np.pi
+    return [theta, phi]
+def rand_location(scale):
+    x = (random.random() - 0.5) * 2 * scale
+    y = (random.random() - 0.5) * 2 * scale
+    z = (random.random() - 0.5) * 2 * scale
+    return [x,y,z]
+
+
+n_shower_steps = 1
+n_cherenkov_steps = 1
+if args.num_rand_events > 0:
+    for event in range(args.num_rand_events):
+        
+        neutrino = Particle('electron neutrino', 0, 0, rand_direction(), rand_location(scale), args.energy, 0)
+        IceCube = em_shower(neutrino, n_shower_steps, n_cherenkov_steps, IceCube, debug=args.debug)
+        
+        IceCube.save_detector( args.output_file + '-detector-' + str(event+1))
+        neutrino.save_particle(args.output_file + '-neutrino-' + str(event+1))
+        
+        for dom in IceCube.dom_list:
+            dom.clear_trigger()
+else: 
+    neutrino = Particle('electron neutrino', 0, 0, args.direction, args.location, args.energy, 0)
+    IceCube = em_shower(neutrino, n_shower_steps, n_cherenkov_steps, IceCube, debug=args.debug)
+    IceCube.save_detector(args.output_file)
