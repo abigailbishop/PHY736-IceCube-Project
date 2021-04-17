@@ -17,6 +17,7 @@ argparser.add_argument('-e', '--energy', dest = 'energy', type = float)
 argparser.add_argument('-g', '--detector_geometry', dest = 'detector_geometry', type = str)
 argparser.add_argument('-o', '--output_file', dest = 'output_file', type = str)
 argparser.add_argument('-b', '--debug', dest = 'debug', type = bool, default=False)
+argparser.add_argument('-u', '--username', dest = 'username', type = str)
 args = argparser.parse_args()
 
 #define constants
@@ -50,8 +51,8 @@ detection_radius = 10 # DOM oversizing
 DOM_QE = .25
 
 #energy dependence of bremsstrahlung
-bs = np.loadtxt('data_bs.csv', delimiter = ',')
-pp = np.loadtxt('data_pp.csv', delimiter = ',')
+bs = np.loadtxt(f"/home/{args.username}/736_project/PHY736-IceCube-Project/data_bs.csv", delimiter = ',')
+pp = np.loadtxt(f"/home/{args.username}/736_project/PHY736-IceCube-Project/data_pp.csv", delimiter = ',')
 new_bs_sigma = []
 for energy in pp[:,0]:
     i=0
@@ -462,7 +463,7 @@ def cherenkov(charged_particle,n_steps,random_walk_n_steps, detector, debug=Fals
     cherenkov_photons = []
     for i in range(n_steps):
         
-        if debug: print(f"\t\tSimulating Cherenkov step {i} for {int(N/n_steps)} photons")
+        # if debug: print(f"\t\tSimulating Cherenkov step {i} for {int(N/n_steps)} photons")
             
         particle_dx = X_o * i / n_steps
         interaction_time = particle_dx / (charged_particle.beta * c) + charged_particle.time
