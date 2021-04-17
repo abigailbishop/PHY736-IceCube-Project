@@ -20,6 +20,7 @@ argparser.add_argument('-e', '--energy', dest = 'energy', type = float)
 argparser.add_argument('-g', '--detector_geometry', dest = 'detector_geometry', type = str)
 argparser.add_argument('-o', '--output_file', dest = 'output_file', type = str)
 argparser.add_argument('-b', '--debug', dest = 'debug', type = bool, default=False)
+argparser.add_argument('-u', '--username', dest = 'username', type = str)
 args = argparser.parse_args()
 
 #define constants
@@ -53,8 +54,8 @@ detection_radius = 10 # DOM oversizing
 DOM_QE = .25
 
 #energy dependence of bremsstrahlung
-bs = np.loadtxt('data_bs.csv', delimiter = ',')
-pp = np.loadtxt('data_pp.csv', delimiter = ',')
+bs = np.loadtxt(f"/home/{args.username}/736_project/PHY736-IceCube-Project/data_bs.csv", delimiter = ',')
+pp = np.loadtxt(f"/home/{args.username}/736_project/PHY736-IceCube-Project/data_pp.csv", delimiter = ',')
 new_bs_sigma = []
 for energy in pp[:,0]:
     i=0
@@ -475,7 +476,7 @@ def cherenkov(charged_particle,n_steps,random_walk_n_steps, detector, debug=Fals
     cherenkov_photons = []
     for i in range(n_steps):
         
-        if debug: print(f"\t\tSimulating Cherenkov step {i} for {int(N/n_steps)} photons")
+        # if debug: print(f"\t\tSimulating Cherenkov step {i} for {int(N/n_steps)} photons")
             
         particle_dx = X_o * i / n_steps
         interaction_time = particle_dx / (charged_particle.beta * c) + charged_particle.time
@@ -568,7 +569,7 @@ if args.detector_geometry == 'IceCube_small':
     scale = 100
 elif args.detector_geometry == 'IceCube':
     X, Y, Z = np.mgrid[-500:500:21j, -500:500:21j,-500:500:21j]
-    scale = 1000
+    scale = 1000 
 locations = np.vstack((X.flatten(), Y.flatten(), Z.flatten())).T
 dom_list = [DOM(loc) for loc in locations]
 IceCube = detector(dom_list)
@@ -601,4 +602,6 @@ if args.num_rand_events > 0:
 else: 
     neutrino = Particle('electron neutrino', 0, 0, args.direction, args.location, args.energy, 0)
     IceCube = em_shower(neutrino, n_shower_steps, n_cherenkov_steps, IceCube, debug=args.debug)
-    IceCube.save_detector(args.output_file)
+
+    IceCube.save_detector( args.output_file + '-detector')
+    neutrino.save_particle(args.output_file + '-neutrino')
