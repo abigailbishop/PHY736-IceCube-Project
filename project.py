@@ -569,7 +569,7 @@ if args.detector_geometry == 'IceCube_small':
     scale = 100
 elif args.detector_geometry == 'IceCube':
     X, Y, Z = np.mgrid[-500:500:21j, -500:500:21j,-500:500:21j]
-    scale = 1000
+    scale = 1000 
 locations = np.vstack((X.flatten(), Y.flatten(), Z.flatten())).T
 dom_list = [DOM(loc) for loc in locations]
 IceCube = detector(dom_list)
@@ -602,4 +602,6 @@ if args.num_rand_events > 0:
 else: 
     neutrino = Particle('electron neutrino', 0, 0, args.direction, args.location, args.energy, 0)
     IceCube = em_shower(neutrino, n_shower_steps, n_cherenkov_steps, IceCube, debug=args.debug)
-    IceCube.save_detector(args.output_file)
+
+    IceCube.save_detector( args.output_file + '-detector')
+    neutrino.save_particle(args.output_file + '-neutrino')
