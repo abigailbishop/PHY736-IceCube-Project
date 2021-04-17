@@ -11,10 +11,13 @@ import argparse
 
 #argparse
 argparser = argparse.ArgumentParser()
-argparse.add_argument('-l', '--location', dest = 'location', type = arr)
-argparse.add_argument('-d', '--direction', dest = 'direction', type = arr)
-argparse.add_argument('-e', '--energy', dest = 'energy', type = float)
-argparse.add_argument('-g', '--detector_geometry', dest = 'detector_geometry', type = str)
+argparser.add_argument('-l', '--location', dest = 'location', type=int, nargs=3, default=[0,0,0])
+argparser.add_argument('-d', '--direction', dest = 'direction', type=int, nargs=3, default=[1,0,0])
+argparser.add_argument('-e', '--energy', dest = 'energy', type = float)
+argparser.add_argument('-g', '--detector_geometry', dest = 'detector_geometry', type = str)
+argparser.add_argument('-o', '--output_file', dest = 'output_file', type = str)
+argparser.add_argument('-b', '--debug', dest = 'debug', type = bool, default=False)
+args = argparser.parse_args()
 
 #define constants
 alpha = 1/137
@@ -114,12 +117,21 @@ class DOM:
         self.times = []
 
 class detector:
-    def __init__(self, dom_list):
+    def __init__(self, dom_list, file_name=None):
+        if file_name is not None:
+            saved_data = np.load(file_name, allow_pickle = True)[()]
+            dom_list = []
+            for load_dom in saved_data:
+                dom_list.append( DOM( load_dom['location'] ) )
+                dom_list[-1].triggered = load_dom['trigger']
+                dom_list[-1].signals   = load_dom['signals']
+                dom_list[-1].times     = load_dom['times']  
+                
         self.dom_list = dom_list
         
     def num_triggered(self): 
         num_triggered = 0
-        for dom in dom_list: 
+        for dom in self.dom_list: #CHANGED
             if dom.triggered: 
                 num_triggered += 1
         return num_triggered
@@ -128,6 +140,17 @@ class detector:
         points = [dom.location for dom in self.dom_list]
         region = ConvexHull(points)
         return region.volume
+    
+    def save_detector(self, file_name):
+        output_array = []
+        for DOM in self.dom_list:
+            output_array.append({})
+            output_array[-1]['location']=DOM.location   
+            output_array[-1]['trigger']=DOM.triggered
+            output_array[-1]['signals']=DOM.signals
+            output_array[-1]['times']=DOM.times
+        np.save(file_name, output_array)
+        return None
 
 #define coordinates
 #We assume that the center of IceCube is at [x,y,z] = [0,0,0]
@@ -439,14 +462,15 @@ def cherenkov(charged_particle,n_steps,random_walk_n_steps, detector, debug=Fals
     cherenkov_photons = []
     for i in range(n_steps):
         
-        print(f"\t\tSimulating Cherenkov step {i} for {int(N/n_steps)} photons")
+        if debug:
+            print(f"\t\tSimulating Cherenkov step {i} for {int(N/n_steps)} photons")
             
         particle_dx = X_o * i / n_steps
         interaction_time = particle_dx / (charged_particle.beta * c) + charged_particle.time
         
         for photon in range(int(N/n_steps)):
             
-            if photon % 1000 == 0: 
+            if debug and photon % 10 == 0: 
                 print(f"\t\t\tSimulating photon {photon}")
             
             add_angle = add_direction(charged_particle.direction[0],
@@ -459,9 +483,9 @@ def cherenkov(charged_particle,n_steps,random_walk_n_steps, detector, debug=Fals
             cherenkov_photons.append(new_photon)
             
             if debug:
-                if photon%1000 == 0: 
+                if photon%10 == 0: 
                     detector = random_walk(new_photon, n_steps, detector, 
-                                           plot_step=True)
+                                           plot_step=False) # If plot_step=True it outputs photon path to terminal
                 else: 
                     detector = random_walk(new_photon, n_steps, detector)
             else:
@@ -488,7 +512,8 @@ def em_shower(neutrino, steps, n_cher_steps, detector, plot_shower=False, debug=
     particle_plotters = [[np.array([neutrino.location, electron.location])]]
     incoming_particles =[electron]
     for n in range(steps):
-        print(f"Simulating EM Shower step {n}")
+        if debug: 
+            print(f"Simulating EM Shower step {n}")
         outgoing_particles = []
         particle_plotters.append([])
         for particle in incoming_particles:
@@ -500,7 +525,8 @@ def em_shower(neutrino, steps, n_cher_steps, detector, plot_shower=False, debug=
             outgoing_particles.append(new_particles[1])
         for particle in outgoing_particles:
             if particle.charge != 0:
-                print(f"\tSimulating Particle {particle.particle_type}")
+                if debug: 
+                    print(f"\tSimulating Particle {particle.particle_type}")
                 N_photons, detector = cherenkov(particle, n_cher_steps, 
                                                 2, detector, debug=debug)
         incoming_particles = outgoing_particles
@@ -526,9 +552,10 @@ def em_shower(neutrino, steps, n_cher_steps, detector, plot_shower=False, debug=
         return None
         
     return detector
-if args.detector == 'IceCube_small':
+
+if args.detector_geometry == 'IceCube_small':
     X, Y, Z = np.mgrid[-20:20:2j, -20:20:2j,-20:20:2j]
-elif args.detector == 'IceCube':
+elif args.detector_geometry == 'IceCube':
     X, Y, Z = np.mgrid[-500:500:21j, -500:500:21j,-500:500:21j]
 locations = np.vstack((X.flatten(), Y.flatten(), Z.flatten())).T
 dom_list = [DOM(loc) for loc in locations]
@@ -537,4 +564,5 @@ IceCube = detector(dom_list)
 
 #Actual Event
 neutrino = Particle('electron neutrino', 0, 0, args.direction, args.location, args.energy, 0)
-IceCube = em_shower(neutrino, 3, 5, IceCube, debug=True)
+IceCube = em_shower(neutrino, 3, 5, IceCube, debug=args.debug)
+IceCube.save_detector(args.output_file)
