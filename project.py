@@ -462,16 +462,14 @@ def cherenkov(charged_particle,n_steps,random_walk_n_steps, detector, debug=Fals
     cherenkov_photons = []
     for i in range(n_steps):
         
-        if debug:
-            print(f"\t\tSimulating Cherenkov step {i} for {int(N/n_steps)} photons")
+        if debug: print(f"\t\tSimulating Cherenkov step {i} for {int(N/n_steps)} photons")
             
         particle_dx = X_o * i / n_steps
         interaction_time = particle_dx / (charged_particle.beta * c) + charged_particle.time
         
         for photon in range(int(N/n_steps)):
             
-            if debug and photon % 10 == 0: 
-                print(f"\t\t\tSimulating photon {photon}")
+            if debug and photon % 10 == 0: print(f"\t\t\tSimulating photon {photon}")
             
             add_angle = add_direction(charged_particle.direction[0],
                                       charged_particle.direction[1], 
@@ -512,8 +510,7 @@ def em_shower(neutrino, steps, n_cher_steps, detector, plot_shower=False, debug=
     particle_plotters = [[np.array([neutrino.location, electron.location])]]
     incoming_particles =[electron]
     for n in range(steps):
-        if debug: 
-            print(f"Simulating EM Shower step {n}")
+        if debug: print(f"Simulating EM Shower step {n}")
         outgoing_particles = []
         particle_plotters.append([])
         for particle in incoming_particles:
@@ -525,8 +522,7 @@ def em_shower(neutrino, steps, n_cher_steps, detector, plot_shower=False, debug=
             outgoing_particles.append(new_particles[1])
         for particle in outgoing_particles:
             if particle.charge != 0:
-                if debug: 
-                    print(f"\tSimulating Particle {particle.particle_type}")
+                if debug: print(f"\tSimulating Particle {particle.particle_type}")
                 N_photons, detector = cherenkov(particle, n_cher_steps, 
                                                 2, detector, debug=debug)
         incoming_particles = outgoing_particles
@@ -564,5 +560,5 @@ IceCube = detector(dom_list)
 
 #Actual Event
 neutrino = Particle('electron neutrino', 0, 0, args.direction, args.location, args.energy, 0)
-IceCube = em_shower(neutrino, 3, 5, IceCube, debug=args.debug)
+IceCube = em_shower(neutrino, 6, 20, IceCube, debug=args.debug)
 IceCube.save_detector(args.output_file)
