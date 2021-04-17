@@ -2,12 +2,12 @@
 
 OUTFOLDER= /test
 OUTDIR=/scratch/abishop/736_project$(OUTFOLDER)
-JOBNAME=project
+JOBNAME=given_neutrino
 
 ENERGY=1e6
 
-IDENTIFIER=$(ENERGY)-$(PROCID)
-OUTFILE=$(JOBNAME)-$(IDENTIFIER).h5
+IDENTIFIER=$(ENERGY)-4-$(PROCID)
+OUTFILE=$(JOBNAME)-$(IDENTIFIER)
 
 executable = $(JOBNAME).sh
 arguments = $(ENERGY) $(OUTFOLDER) $(OUTFILE)
