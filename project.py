@@ -573,6 +573,18 @@ scale = 1
 if args.detector_geometry == 'IceCube_small':
     X, Y, Z = np.mgrid[-20:20:2j, -20:20:2j,-20:20:2j]
     scale = 100
+elif args.detector_geometry == 'IceCube_2':
+    X, Y, Z = np.mgrid[-25:25:2j, -25:25:2j,-25:25:2j]
+    scale = 100
+elif args.detector_geometry == 'IceCube_3':
+    X, Y, Z = np.mgrid[-50:50:3j, -20:20:3j,-50:50:3j]
+    scale = 200
+elif args.detector_geometry == 'IceCube_4':
+    X, Y, Z = np.mgrid[-75:75:4j, -75:75:4j,-75:75:4j]
+    scale = 300
+elif args.detector_geometry == 'IceCube_5':
+    X, Y, Z = np.mgrid[-100:100:5j, -100:100:5j,-100:100:5j]
+    scale = 350
 elif args.detector_geometry == 'IceCube':
     X, Y, Z = np.mgrid[-500:500:21j, -500:500:21j,-500:500:21j]
     scale = 1000 
