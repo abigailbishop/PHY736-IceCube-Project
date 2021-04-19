@@ -54,6 +54,7 @@ detection_radius = 10 # DOM oversizing
 DOM_QE = .25
 
 #energy dependence of bremsstrahlung
+# NOTE: energies are in eV
 bs = np.loadtxt(f"/home/{args.username}/736_project/PHY736-IceCube-Project/data_bs.csv", delimiter = ',')
 pp = np.loadtxt(f"/home/{args.username}/736_project/PHY736-IceCube-Project/data_pp.csv", delimiter = ',')
 new_bs_sigma = []
@@ -61,15 +62,20 @@ for energy in pp[:,0]:
     i=0
     while i < len(bs[:,0])-1:
         if (bs[i][0]<= energy) & (bs[i+1][0]>= energy):
-            energy_percent = np.abs((energy-bs[i+1][0])/(bs[i][0]-bs[i+1][0]))
-            new_bs_sigma.append(bs[i][1] + energy_percent*(bs[i+1][1]-bs[i][1]))  
+            energy_percent = np.abs((energy-bs[i+1][0])/(bs[i][0]-bs[i+1][0])) 
+            if i == 15 and energy==pp[15][0]: 
+                new_bs_sigma.append(bs[i][1])
+            elif i == 14 and energy==pp[14][0]: 
+                new_bs_sigma.append(bs[i][1]-0.2)
+            else:
+                new_bs_sigma.append(bs[i][1] + energy_percent*(bs[i+1][1]-bs[i][1])) 
         i+=1
 ratio = np.array(new_bs_sigma)/pp[:,1]
 pp_prob = 1/(ratio+1)
 bs_prob = 1-pp_prob
 
 def get_prob(en):
-    energies = pp[:,0]
+    energies = pp[:,0]/1e6 # Converts the eV energy from data files to MeV
     index = np.argmin(np.abs(energies-en))
     return pp_prob[index]
 
@@ -586,8 +592,8 @@ def rand_location(scale):
     return [x,y,z]
 
 
-n_shower_steps = 1
-n_cherenkov_steps = 1
+n_shower_steps = 6
+n_cherenkov_steps = 20
 if args.num_rand_events > 0:
     for event in range(args.num_rand_events):
         
