@@ -572,19 +572,19 @@ def em_shower(neutrino, steps, n_cher_steps, detector, plot_shower=False, debug=
 scale = 1
 if args.detector_geometry == 'IceCube_small':
     X, Y, Z = np.mgrid[-20:20:2j, -20:20:2j,-20:20:2j]
-    scale = 100
+    scale = 220
 elif args.detector_geometry == 'IceCube_2':
     X, Y, Z = np.mgrid[-25:25:2j, -25:25:2j,-25:25:2j]
-    scale = 100
+    scale = 225
 elif args.detector_geometry == 'IceCube_3':
     X, Y, Z = np.mgrid[-50:50:3j, -50:50:3j,-50:50:3j]
-    scale = 200
+    scale = 250
 elif args.detector_geometry == 'IceCube_4':
     X, Y, Z = np.mgrid[-75:75:4j, -75:75:4j,-75:75:4j]
-    scale = 300
+    scale = 275
 elif args.detector_geometry == 'IceCube_5':
     X, Y, Z = np.mgrid[-100:100:5j, -100:100:5j,-100:100:5j]
-    scale = 350
+    scale = 300
 elif args.detector_geometry == 'IceCube':
     X, Y, Z = np.mgrid[-500:500:21j, -500:500:21j,-500:500:21j]
     scale = 1000 
@@ -604,8 +604,8 @@ def rand_location(scale):
     return [x,y,z]
 
 
-n_shower_steps = 6
-n_cherenkov_steps = 20
+n_shower_steps = 4
+n_cherenkov_steps = 10
 if args.num_rand_events > 0:
     for event in range(args.num_rand_events):
         
