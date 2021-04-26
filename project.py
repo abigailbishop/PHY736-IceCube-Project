@@ -13,8 +13,8 @@ warnings.filterwarnings('error')
 
 #argparse
 argparser = argparse.ArgumentParser()
-argparser.add_argument('-l', '--location', dest = 'location', type=int, nargs=3, default=[0,0,0])
-argparser.add_argument('-d', '--direction', dest = 'direction', type=int, nargs=3, default=[1,0,0])
+argparser.add_argument('-l', '--location', dest = 'location', type=float, nargs=3, default=[0,0,0])
+argparser.add_argument('-d', '--direction', dest = 'direction', type=float, nargs=2, default=[0.,0.])
 argparser.add_argument('-r', '--num_rand_events', dest = 'num_rand_events', type=int, default=0)
 argparser.add_argument('-e', '--energy', dest = 'energy', type = float)
 argparser.add_argument('-g', '--detector_geometry', dest = 'detector_geometry', type = str)
@@ -544,7 +544,7 @@ def em_shower(neutrino, steps, n_cher_steps, detector, plot_shower=False, debug=
             if particle.charge != 0:
                 if debug: print(f"\tSimulating Particle {particle.particle_type}")
                 N_photons, detector = cherenkov(particle, n_cher_steps, 
-                                                2, detector, debug=debug)
+                                                5, detector, debug=debug)
         incoming_particles = outgoing_particles
         
     if plot_shower: 
@@ -604,7 +604,7 @@ def rand_location(scale):
     return [x,y,z]
 
 
-n_shower_steps = 4
+n_shower_steps = 7
 n_cherenkov_steps = 10
 if args.num_rand_events > 0:
     for event in range(args.num_rand_events):
